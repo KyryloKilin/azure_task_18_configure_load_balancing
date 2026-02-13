@@ -179,6 +179,23 @@ $lb = New-AzLoadBalancer `
   -Probe $probe `
   -LoadBalancingRule $rule
 
+Write-Host "Attaching web VMs NICs to the backend pool..."
+
+
+$bepool = $lb.BackendAddressPools[0]
+
+foreach ($vm in $webVms) {
+  $nicId = $vm.NetworkProfile.NetworkInterfaces[0].Id
+  $nicName = ($nicId -split "/")[-1]
+
+  $nic = Get-AzNetworkInterface -ResourceGroupName $resourceGroupName -Name $nicName
+
+  $nic.IpConfigurations[0].LoadBalancerBackendAddressPools = @($bepool)
+
+  Set-AzNetworkInterface -NetworkInterface $nic | Out-Null
+
+  Write-Host "Attached NIC $nicName to backend pool"
+}
 
 
 # Write-Host "Adding VMs to the backend pool"
